@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -23,6 +25,7 @@ type Item struct {
 	Description string `xml:"description"`
 	Link        string `xml:"link"`
 	PubDate     string `xml:"pubDate"`
+	Hash        string
 }
 
 func main() {
@@ -39,21 +42,30 @@ func main() {
 		panic(err)
 	}
 
-	var rss RSS
-	err = xml.Unmarshal(body, &rss)
+	var rssFeed RSS
+	err = xml.Unmarshal(body, &rssFeed)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(rss.Channel.Title)
-	fmt.Println(rss.Channel.Description)
-	fmt.Println(rss.Channel.Link)
+	fmt.Println(rssFeed.Channel.Title)
+	fmt.Println(rssFeed.Channel.Description)
+	fmt.Println(rssFeed.Channel.Link)
 
-	for _, item := range rss.Channel.Items {
+	for _, item := range rssFeed.Channel.Items {
+		hash := generateHash(item.Title, item.PubDate)
+		item.Hash = hash
 		fmt.Println(item.Title)
 		//fmt.Println(item.Description)
 		//fmt.Println(item.Link)
 		fmt.Println(item.PubDate)
+		fmt.Println(item.Hash)
 		fmt.Println("---------")
 	}
+}
+
+func generateHash(title, pubDate string) string {
+	h := md5.New()
+	h.Write([]byte(title + pubDate))
+	return hex.EncodeToString(h.Sum(nil))
 }
